@@ -14,6 +14,21 @@ d['EMAIL_PASSWORD'] = os.environ.get('EMAIL_PASSWORD')
 d['EMAIL_SERVER'] = os.environ.get('EMAIL_SERVER')
 d['EMAIL_PORT'] = os.environ.get('EMAIL_PORT')
 
+lookup_error_msg = """\
+At least one of the five necessary environment variables was not found.
+If it's your first time using this package you need to set 5 environment variables to never have to deal with that again:
+EMAIL_SENDER    : the email address that you will be sending FROM
+EMAIL_PASSWORD  : the password to the EMAIL_SENDER address
+EMAIL_SERVER    : the server of the EMAIL_SENDER address
+EMAIL_PORT      : SMTP port appropriate to your EMAIL_SERVER (if not sure use port 465 for standard encrypted SMTP port \
+and only if it doesn't work search for the one your server decided to use instead)
+EMAIL_RECIPIENT : the default recipient email address (this will allow you to email yourself faster with just \
+fast_email('some message to myself'), so without specifying recipients every time)
+"""
+
+if any(val is None for val in d.values()):
+    raise LookupError(lookup_error_msg)
+
 
 def html_to_text(html):
     text = html.replace("<br>", "\n") \
@@ -21,11 +36,10 @@ def html_to_text(html):
 
     r = re.compile(r'<.*?>', re.DOTALL)
     text = r.sub("", text)
-
     return text
 
 
-def fast_email(recipients=None, subject='MSG', html_msg='', thread_no=None):
+def fast_email(html_msg='', recipients=[os.environ.get('EMAIL_RECIPIENT')], subject='MSG', thread_no=None):
     """
     This function can send many emails very fast by using multiple threads.
     It can send the same message with the same subject to many recipients 
@@ -33,10 +47,10 @@ def fast_email(recipients=None, subject='MSG', html_msg='', thread_no=None):
 
     Input
     -----
+    html_msg   : a single string with html text or a list of strings
     recipients : a list of e-mail addresses as strings
-    subject : a single string or a list of strings
-    html_msg : a single string with html text or a list of strings
-    thread_no : an integer that can override the default number of threads to use
+    subject    : a single string or a list of strings
+    thread_no  : an integer that can override the default number of threads to use
 
     Output
     ------
@@ -49,21 +63,20 @@ def fast_email(recipients=None, subject='MSG', html_msg='', thread_no=None):
     If subject or html_msg are lists, they must be the same length as
     recipients.
     """
-    if recipients is None:
-        recipients = [os.environ.get('EMAIL_RECIPIENT')]
+    if recipients == [None]:
+        raise LookupError(lookup_error_msg)
 
     if thread_no is None:
         thread_no = min(len(recipients), MAX_THREADS)
 
     if type(recipients) != list or recipients == []:
-        # here should be raise element instead of return string
-        return  "recipients should be a list with at least one e-mail address"
+        raise TypeError("recipients should be a list with at least one e-mail address")
+
     if type(subject) == list and len(subject) != len(recipients):
-        # here should be raise element instead of return string
-        return "Number of subjects doesn't equal the number of recipients."
+        raise IndexError("Number of subjects doesn't equal the number of recipients.")
+
     if type(html_msg) == list and len(html_msg) != len(recipients):
-        # here should be raise element instead of return string
-        return "Number of html messages doesn't equal the number of recipients."
+        raise IndexError("Number of html messages doesn't equal the number of recipients.")
 
     msg_data = {}
     """
@@ -146,7 +159,7 @@ def fast_email(recipients=None, subject='MSG', html_msg='', thread_no=None):
         targets[i % thread_no]['recipients'].append(msg_data['recipients'][i])
         targets[i % thread_no]['subject'].append(msg_data['subject'][i])
         targets[i % thread_no]['html_msg'].append(msg_data['html_msg'][i])
-        targets[i % thread_no]['text_msg'].append(msg_data['recipients'][i])
+        targets[i % thread_no]['text_msg'].append(msg_data['text_msg'][i])
 
     # run multithreads
     threads = []
