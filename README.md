@@ -108,3 +108,4 @@ export EMAIL_PASSWORD=averystrongandimpeccablepassword
 export EMAIL_SERVER=example.com
 export EMAIL_PORT=465
 ```
+- save the file and restart the terminal
