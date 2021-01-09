@@ -10,7 +10,7 @@ with open("README.md", 'r', encoding='utf-8') as file:
 
 setup(
     name="fast_email",
-    version="0.1.0",
+    version="0.1.1",
     author="Konrad Olszowski",
     author_email="olszowski.konrad@gmail.com",
     description=description,
