@@ -68,6 +68,8 @@ def fast_email(html_msg='', recipients=[os.environ.get('EMAIL_RECIPIENT')], subj
 
     if thread_no is None:
         thread_no = min(len(recipients), MAX_THREADS)
+    else:
+        thread_no = min(len(recipients), thread_no)
 
     if type(recipients) != list or recipients == []:
         raise TypeError("recipients should be a list with at least one e-mail address")
